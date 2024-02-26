@@ -6,10 +6,18 @@ SELECT DISTINCT [AccountNumber]
     WHERE  mob <= 12 and  IsMonthEnd = 1 --and AccountNumber = '7129596'
     GROUP by AccountNumber   ),
 
+thirtyAtThree AS (
+SELECT DISTINCT [AccountNumber]
+     ,Ever30
+    FROM [Reporting-db].[nystart].[LoanPortfolioMonthly]
+    WHERE  mob = 3 and  IsMonthEnd = 1 --and AccountNumber = '7129596'
+      ),
+
 DEL90 AS (
-    SELECT DISTINCT L.AccountNumber ,L.Ever90 ,L.DisbursedDate ,L.MOB      --,SnapshotDate
+    SELECT DISTINCT L.AccountNumber ,T.Ever30 ,L.Ever90 ,L.DisbursedDate ,L.MOB      --,SnapshotDate
     FROM [Reporting-db].[nystart].[LoanPortfolioMonthly] as L
-    inner join LPM_less12M_Accounts as A on L.AccountNumber =A.AccountNumber and L.MOB = A.max_mob ) ,
+    inner join LPM_less12M_Accounts as A on L.AccountNumber =A.AccountNumber and L.MOB = A.max_mob  
+    inner join thirtyAtThree as T on L.AccountNumber =T.AccountNumber  )  ,
 
 
 snn_score_both AS (
@@ -29,6 +37,7 @@ snn_score_both AS (
         A.[ReceivedDate],
         A.[DisbursedDate],
         A.[Amount],
+        A.InterestRate,
         --A.[UCScore],
         A.[PaymentRemarks],
         A.[CreditOfficer],
@@ -193,13 +202,14 @@ numbered_scores AS (
 
 SELECT
 
+        D.Ever30,
         D.Ever90,
 
     s.*
 
 FROM numbered_scores s
 
-inner join DEL90 as d  on d.AccountNumber = s.AccountNumber
+full join DEL90 as d  on d.AccountNumber = s.AccountNumber
 
 
 WHERE s.RowNum = 1 --and d.Ever90 = 1  --AND s.AccountNumber = 7739188
